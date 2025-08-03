@@ -4,7 +4,7 @@ const path = require('path');
 const apiRoutes = require('./routes/api');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3087;
 
 // Middleware
 // Use body-parser to parse JSON bodies
