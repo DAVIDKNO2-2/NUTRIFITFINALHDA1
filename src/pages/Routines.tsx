@@ -30,7 +30,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const initialRoutines = [
     {
@@ -87,31 +87,38 @@ const difficultyColors = {
 };
 
 export default function Routines() {
-    const [routines, setRoutines] = useState(initialRoutines);
+    const [routines, setRoutines] = useState([]);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [isAlertOpen, setIsAlertOpen] = useState(false);
     const [selectedRoutine, setSelectedRoutine] = useState(null);
     const [dialogMode, setDialogMode] = useState('add'); // 'add' or 'edit'
 
-    const handleAddClick = () => {
-        setDialogMode('add');
-        setSelectedRoutine(null);
-        setIsDialogOpen(true);
-    };
+    // const handleAddClick = () => {
+    //     setDialogMode('add');
+    //     setSelectedRoutine(null);
+    //     setIsDialogOpen(true);
+    // };
 
-    const handleEditClick = (routine) => {
-        setDialogMode('edit');
-        setSelectedRoutine(routine);
-        setIsDialogOpen(true);
-    };
+    // const handleEditClick = (routine) => {
+    //     setDialogMode('edit');
+    //     setSelectedRoutine(routine);
+    //     setIsDialogOpen(true);
+    // };
 
     const handleDeleteClick = (routine) => {
         setSelectedRoutine(routine);
         setIsAlertOpen(true);
     };
 
-    const handleDeleteConfirm = () => {
-        setRoutines(routines.filter(r => r.id !== selectedRoutine.id));
+    const handleDeleteConfirm = async () => {
+        if (!selectedRoutine) return;
+        // Llama a la API para eliminar la rutina
+        const res = await fetch(`http://localhost:3097/api/routines/${selectedRoutine.id}`, {
+            method: "DELETE",
+        });
+        if (res.ok) {
+            setRoutines(routines.filter(r => r.id !== selectedRoutine.id));
+        }
         setIsAlertOpen(false);
         setSelectedRoutine(null);
     };
@@ -153,28 +160,110 @@ export default function Routines() {
         setCurrentExercises(updatedExercises);
     };
 
-    const handleFormSubmit = (e) => {
+    const handleFormSubmit = async (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
         const newRoutine = {
-            id: dialogMode === 'add' ? Date.now() : selectedRoutine.id,
-            title: formData.get('title'),
-            trainer: formData.get('trainer'),
-            duration: formData.get('duration'),
-            difficulty: formData.get('difficulty'),
-            sessions: parseInt(formData.get('sessions')),
+            name: formData.get('title'),
             description: formData.get('description'),
-            exercises: currentExercises.filter(e => e.name), // Only add exercises that have a name
-            nextSession: "Próximamente"
+            exercises: currentExercises.filter(e => e.name).map((e, idx) => ({
+                id: e.id, // Puede ser undefined si es nuevo
+                name: e.name,
+                repetitions: e.repetitions,
+                instructions: e.description,
+            })),
         };
 
         if (dialogMode === 'add') {
-            setRoutines([...routines, newRoutine]);
-        } else {
-            setRoutines(routines.map(r => r.id === newRoutine.id ? newRoutine : r));
+            // POST a la API
+            const res = await fetch("http://localhost:3097/api/routines", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(newRoutine),
+            });
+            if (res.ok) {
+                // Recarga las rutinas desde la API
+                const data = await res.json();
+                // Opcional: puedes volver a hacer fetch de todas las rutinas o agregar la nueva al estado
+                setRoutines(prev => [...prev, {
+                    id: data.id,
+                    title: data.name,
+                    trainer: "Desconocido",
+                    duration: "30 min",
+                    difficulty: "Intermedio",
+                    sessions: 1,
+                    description: data.description,
+                    exercises: data.exercises.map(e => ({
+                        name: e.name,
+                        repetitions: e.repetitions,
+                        description: e.instructions,
+                    })),
+                    nextSession: "Próximamente"
+                }]);
+            }
+        } else if (dialogMode === 'edit' && selectedRoutine) {
+            // PUT a la API
+            const routineToUpdate = {
+                id: selectedRoutine.id,
+                ...newRoutine,
+            };
+            const res = await fetch(`http://localhost:3097/api/routines/${selectedRoutine.id}`, {
+                method: "PUT",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(routineToUpdate),
+            });
+            if (res.ok) {
+                const data = await res.json();
+                setRoutines(prev =>
+                    prev.map(r =>
+                        r.id === selectedRoutine.id
+                            ? {
+                                id: data.id,
+                                title: data.name,
+                                trainer: formData.get('trainer'),
+                                duration: formData.get('duration'),
+                                difficulty: formData.get('difficulty'),
+                                sessions: Number(formData.get('sessions')),
+                                description: data.description,
+                                exercises: data.exercises.map(e => ({
+                                    id: e.id,
+                                    name: e.name,
+                                    repetitions: e.repetitions,
+                                    description: e.instructions,
+                                })),
+                                nextSession: "Próximamente"
+                            }
+                            : r
+                    )
+                );
+            }
         }
         handleDialogClose();
     };
+
+    useEffect(() => {
+        fetch("http://localhost:3097/api/routines")
+            .then(res => res.json())
+            .then(data => {
+                // Adaptar la estructura de la API a la que espera la UI
+                const adapted = data.map((r) => ({
+                    id: r.id,
+                    title: r.name,
+                    trainer: "Desconocido", // Puedes cambiar esto si tienes el dato
+                    duration: "30 min",     // Puedes cambiar esto si tienes el dato
+                    difficulty: "Intermedio", // Puedes cambiar esto si tienes el dato
+                    sessions: 1,            // Puedes cambiar esto si tienes el dato
+                    description: r.description,
+                    exercises: r.exercises.map(e => ({
+                        name: e.name,
+                        repetitions: e.repetitions,
+                        description: e.instructions,
+                    })),
+                    nextSession: "Próximamente"
+                }));
+                setRoutines(adapted);
+            });
+    }, []);
 
     return (
         <div className="min-h-screen bg-background pt-20">
@@ -282,7 +371,7 @@ export default function Routines() {
 
                 {/* Add/Edit Dialog */}
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                    <DialogContent className="sm:max-w-[425px]">
+                    <DialogContent className="sm:max-w-[600px]">
                         <form onSubmit={handleFormSubmit}>
                             <DialogHeader>
                                 <DialogTitle>{dialogMode === 'add' ? 'Añadir Nueva Rutina' : 'Editar Rutina'}</DialogTitle>
@@ -291,38 +380,40 @@ export default function Routines() {
                                 </DialogDescription>
                             </DialogHeader>
                             <div className="grid gap-4 py-4">
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="title" className="text-right">Título</Label>
-                                    <Input id="title" name="title" defaultValue={selectedRoutine?.title} className="col-span-3" required />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="trainer" className="text-right">Entrenador</Label>
-                                    <Input id="trainer" name="trainer" defaultValue={selectedRoutine?.trainer} className="col-span-3" required />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="duration" className="text-right">Duración</Label>
-                                    <Input id="duration" name="duration" defaultValue={selectedRoutine?.duration} className="col-span-3" required />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="difficulty" className="text-right">Dificultad</Label>
-                                    <Select name="difficulty" defaultValue={selectedRoutine?.difficulty} required>
-                                        <SelectTrigger className="col-span-3">
-                                            <SelectValue placeholder="Selecciona dificultad" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Principiante">Principiante</SelectItem>
-                                            <SelectItem value="Intermedio">Intermedio</SelectItem>
-                                            <SelectItem value="Avanzado">Avanzado</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="sessions" className="text-right">Sesiones</Label>
-                                    <Input id="sessions" name="sessions" type="number" defaultValue={selectedRoutine?.sessions} className="col-span-3" required />
-                                </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="description" className="text-right">Descripción</Label>
-                                    <Textarea id="description" name="description" defaultValue={selectedRoutine?.description} className="col-span-3" required />
+                                <div className="grid gap-4">
+                                    <div className="">
+                                        <Label htmlFor="title">Título</Label>
+                                        <Input id="title" name="title" defaultValue={selectedRoutine?.title} required />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="trainer">Entrenador</Label>
+                                        <Input id="trainer" name="trainer" defaultValue={selectedRoutine?.trainer} required />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="duration">Duración</Label>
+                                        <Input id="duration" name="duration" defaultValue={selectedRoutine?.duration} required />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="difficulty">Dificultad</Label>
+                                        <Select name="difficulty" defaultValue={selectedRoutine?.difficulty} required>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Selecciona dificultad" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="Principiante">Principiante</SelectItem>
+                                                <SelectItem value="Intermedio">Intermedio</SelectItem>
+                                                <SelectItem value="Avanzado">Avanzado</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="sessions">Sesiones</Label>
+                                        <Input id="sessions" name="sessions" type="number" defaultValue={selectedRoutine?.sessions} required />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor="description">Descripción</Label>
+                                        <Textarea id="description" name="description" defaultValue={selectedRoutine?.description} required />
+                                    </div>
                                 </div>
                                 <div className="col-span-4">
                                     <Label>Ejercicios</Label>
