@@ -40,8 +40,12 @@ const initialRoutines = [
         duration: "45 min",
         difficulty: "Intermedio",
         sessions: 3,
-        description: "Rutina completa para trabajar todos los grupos musculares principales",
-        exercises: ["Sentadillas", "Press de banca", "Peso muerto", "Dominadas"],
+        description: "Rutina completa para trabajar todos los grupos musculares principales.",
+        exercises: [
+            { name: "Sentadillas", repetitions: "4x10", description: "Bajar la cadera hasta que esté paralela al suelo, manteniendo la espalda recta." },
+            { name: "Press de banca", repetitions: "4x8", description: "Bajar la barra hasta el pecho y empujar hacia arriba con fuerza." },
+            { name: "Peso muerto", repetitions: "3x6", description: "Levantar la barra del suelo manteniendo la espalda recta y usando la fuerza de las piernas y la espalda baja." },
+        ],
         nextSession: "Mañana 10:00 AM"
     },
     {
@@ -51,8 +55,12 @@ const initialRoutines = [
         duration: "30 min",
         difficulty: "Avanzado",
         sessions: 4,
-        description: "Entrenamiento de alta intensidad para quemar grasa y mejorar resistencia",
-        exercises: ["Burpees", "Mountain climbers", "Jumping jacks", "Sprint"],
+        description: "Entrenamiento de alta intensidad para quemar grasa y mejorar resistencia.",
+        exercises: [
+            { name: "Burpees", repetitions: "3x15", description: "Combina una sentadilla, una flexión y un salto vertical en un movimiento fluido." },
+            { name: "Mountain climbers", repetitions: "3x45s", description: "En posición de plancha, llevar las rodillas al pecho de forma alterna y rápida." },
+            { name: "Jumping jacks", repetitions: "3x60s", description: "Saltar abriendo y cerrando piernas y brazos de forma coordinada." },
+        ],
         nextSession: "Hoy 6:00 PM"
     },
     {
@@ -62,8 +70,12 @@ const initialRoutines = [
         duration: "60 min",
         difficulty: "Principiante",
         sessions: 2,
-        description: "Sesión de yoga para mejorar flexibilidad y reducir estrés",
-        exercises: ["Saludo al sol", "Guerrero", "Perro boca abajo", "Meditación"],
+        description: "Sesión de yoga para mejorar flexibilidad y reducir estrés.",
+        exercises: [
+            { name: "Saludo al sol", repetitions: "5 rondas", description: "Secuencia de posturas que calientan y estiran todo el cuerpo." },
+            { name: "Postura del Guerrero II", repetitions: "3x30s por lado", description: "Postura de pie que fortalece piernas y abre caderas." },
+            { name: "Perro boca abajo", repetitions: "5 respiraciones", description: "Estiramiento completo del cuerpo, enfocándose en la espalda y las piernas." },
+        ],
         nextSession: "Viernes 7:00 AM"
     }
 ];
@@ -109,6 +121,38 @@ export default function Routines() {
         setSelectedRoutine(null);
     };
 
+    const [currentExercises, setCurrentExercises] = useState([]);
+
+    const handleAddClick = () => {
+        setDialogMode('add');
+        setSelectedRoutine(null);
+        setCurrentExercises([{ name: '', repetitions: '', description: '' }]);
+        setIsDialogOpen(true);
+    };
+
+    const handleEditClick = (routine) => {
+        setDialogMode('edit');
+        setSelectedRoutine(routine);
+        setCurrentExercises(routine.exercises);
+        setIsDialogOpen(true);
+    };
+
+    const handleExerciseChange = (index, field, value) => {
+        const updatedExercises = [...currentExercises];
+        updatedExercises[index][field] = value;
+        setCurrentExercises(updatedExercises);
+    };
+
+    const addExercise = () => {
+        setCurrentExercises([...currentExercises, { name: '', repetitions: '', description: '' }]);
+    };
+
+    const removeExercise = (index) => {
+        const updatedExercises = [...currentExercises];
+        updatedExercises.splice(index, 1);
+        setCurrentExercises(updatedExercises);
+    };
+
     const handleFormSubmit = (e) => {
         e.preventDefault();
         const formData = new FormData(e.target);
@@ -120,7 +164,7 @@ export default function Routines() {
             difficulty: formData.get('difficulty'),
             sessions: parseInt(formData.get('sessions')),
             description: formData.get('description'),
-            exercises: formData.get('exercises').split(',').map(e => e.trim()),
+            exercises: currentExercises.filter(e => e.name), // Only add exercises that have a name
             nextSession: "Próximamente"
         };
 
@@ -205,19 +249,31 @@ export default function Routines() {
                                     <div className="flex items-center gap-1"><Calendar className="h-4 w-4" />{routine.sessions}/semana</div>
                                 </div>
                                 <div>
-                                    <p className="text-sm font-medium text-foreground mb-2">Ejercicios principales:</p>
-                                    <div className="flex flex-wrap gap-1">
-                                        {routine.exercises.map((exercise, index) => (
-                                            <Badge key={index} variant="secondary" className="text-xs">{exercise}</Badge>
+                                    <p className="text-sm font-medium text-foreground mb-2">Ejercicios:</p>
+                                    <div className="space-y-2">
+                                        {routine.exercises.slice(0, 2).map((exercise, index) => (
+                                            <div key={index} className="text-xs p-2 bg-muted rounded-md">
+                                                <div className="flex justify-between items-center">
+                                                    <span className="font-semibold">{exercise.name}</span>
+                                                    <Badge variant="outline" className="text-xs">{exercise.repetitions}</Badge>
+                                                </div>
+                                            </div>
                                         ))}
+                                        {routine.exercises.length > 2 && (
+                                            <p className="text-xs text-center text-muted-foreground mt-1">
+                                                y {routine.exercises.length - 2} más...
+                                            </p>
+                                        )}
                                     </div>
                                 </div>
                             </CardContent>
 
-                            <div className="p-6 pt-0">
+                            <div className="p-6 pt-0 mt-auto">
                                 <div className="flex gap-2 pt-2">
                                     <Button variant="hero" className="flex-1">Iniciar Rutina</Button>
-                                    <Button variant="fitness-outline" className="flex-1">Ver Detalles</Button>
+                                    <Button variant="fitness-outline" className="flex-1" onClick={() => handleEditClick(routine)}>
+                                        Ver Detalles
+                                    </Button>
                                 </div>
                             </div>
                         </Card>
@@ -268,9 +324,45 @@ export default function Routines() {
                                     <Label htmlFor="description" className="text-right">Descripción</Label>
                                     <Textarea id="description" name="description" defaultValue={selectedRoutine?.description} className="col-span-3" required />
                                 </div>
-                                <div className="grid grid-cols-4 items-center gap-4">
-                                    <Label htmlFor="exercises" className="text-right">Ejercicios</Label>
-                                    <Input id="exercises" name="exercises" defaultValue={selectedRoutine?.exercises.join(', ')} className="col-span-3" placeholder="Separados por comas" required />
+                                <div className="col-span-4">
+                                    <Label>Ejercicios</Label>
+                                    <div className="space-y-4 mt-2">
+                                        {currentExercises.map((exercise, index) => (
+                                            <div key={index} className="p-3 border rounded-lg space-y-2 relative">
+                                                <Button
+                                                    type="button"
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="absolute top-1 right-1 h-6 w-6"
+                                                    onClick={() => removeExercise(index)}
+                                                >
+                                                    <Trash2 className="h-4 w-4 text-red-500" />
+                                                </Button>
+                                                <Input
+                                                    placeholder="Nombre del Ejercicio"
+                                                    value={exercise.name}
+                                                    onChange={(e) => handleExerciseChange(index, 'name', e.target.value)}
+                                                    required
+                                                />
+                                                <Input
+                                                    placeholder="Repeticiones (e.j. 4x10)"
+                                                    value={exercise.repetitions}
+                                                    onChange={(e) => handleExerciseChange(index, 'repetitions', e.target.value)}
+                                                    required
+                                                />
+                                                <Textarea
+                                                    placeholder="Descripción de la ejecución"
+                                                    value={exercise.description}
+                                                    onChange={(e) => handleExerciseChange(index, 'description', e.target.value)}
+                                                    required
+                                                />
+                                            </div>
+                                        ))}
+                                    </div>
+                                    <Button type="button" variant="outline" size="sm" className="mt-2" onClick={addExercise}>
+                                        <Plus className="h-4 w-4 mr-2" />
+                                        Añadir Ejercicio
+                                    </Button>
                                 </div>
                             </div>
                             <DialogFooter>
