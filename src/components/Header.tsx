@@ -30,11 +30,11 @@ export function Header() {
             <Link to="/nutrition" className="text-foreground hover:text-primary transition-colors">
               Nutrición
             </Link>
-            <Link to="/trainers" className="text-foreground hover:text-primary transition-colors">
-              Entrenadores
-            </Link>
             <Link to="/progress" className="text-foreground hover:text-primary transition-colors">
               Progreso
+            </Link>
+            <Link to="/trainers" className="text-foreground hover:text-primary transition-colors">
+              Entrenadores
             </Link>
           </nav>
 
@@ -84,18 +84,18 @@ export function Header() {
                 Nutrición
               </Link>
               <Link 
-                to="/trainers" 
-                className="text-foreground hover:text-primary transition-colors py-2"
-                onClick={toggleMenu}
-              >
-                Entrenadores
-              </Link>
-              <Link 
                 to="/progress" 
                 className="text-foreground hover:text-primary transition-colors py-2"
                 onClick={toggleMenu}
               >
                 Progreso
+              </Link>
+              <Link 
+                to="/trainers" 
+                className="text-foreground hover:text-primary transition-colors py-2"
+                onClick={toggleMenu}
+              >
+                Entrenadores
               </Link>
               <div className="flex flex-col space-y-2 pt-4">
                 <Button variant="fitness-outline" size="sm">
