@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,19 +7,173 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Routine {
-  id          Int        @id @default(autoincrement())
-  name        String
-  description String?
-  createdAt   DateTime   @default(now())
-  exercises   Exercise[]
+enum RolType {
+  ENTRENADOR
+  CLIENTE
+  ADMIN
 }
 
-model Exercise {
-  id           Int     @id @default(autoincrement())
-  name         String
-  repetitions  String?
-  instructions String?
-  routine      Routine @relation(fields: [routineId], references: [id])
-  routineId    Int
+enum PlanType {
+  PREMIUM
+  NORMAL
 }
+
+model usuario {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  password  String
+  rol       RolType
+  plan      PlanType?
+  name      String?
+  createdAt DateTime @default(now())
+  trainerId Int?
+  trainer   usuario? @relation("Clients", fields: [trainerId], references: [id])
+  clients   usuario[] @relation("Clients")
+
+  // Relación uno a uno con Cliente
+  cliente   Cliente?
+
+  // Relación uno a uno con Entrenador
+  entrenador Entrenador?
+
+  // Campos para recuperación
+  resetToken       String?
+  resetTokenExpiry DateTime?
+}
+
+model Entrenador {
+  id                 Int     @id @default(autoincrement())
+  fotoPerfil         String?
+  nombreCompleto     String
+  edad               Int?
+  telefono           String?
+  ciudad             String?
+  pais               String?
+  biografia          String?
+  nivelAcademico     String?
+  certificaciones    String?
+  aniosExperiencia   Int?
+  especialidades     String?
+  documentosAdjuntos String?
+  usuarioId          Int     @unique
+  clienteId          Int     @unique
+
+  usuario usuario   @relation(fields: [usuarioId], references: [id])
+  cliente Cliente   @relation(fields: [clienteId], references: [id])
+}
+
+model Cliente {
+  id                      Int       @id @default(autoincrement())
+  fotoPerfil              String?
+  nombreCompleto          String
+  genero                  String?
+  edad                    Int?
+  correoElectronico       String?
+  telefono                String?
+  ciudad                  String?
+  pais                    String?
+  alturaCm                Float?
+  pesoActualKg            Float?
+  pesoObjetivoKg          Float?
+  condicionesMedicas      String?
+  alergias                String?
+  nivelActividad          String?
+  objetivoGeneral         String?
+  tipoAlimentacion        String?
+  alimentosPreferidos     String?
+  alimentosNoPreferidos   String?
+  restriccionesDieteticas String?
+  plan                    PlanType?
+  usuarioId               Int       @unique
+
+  usuario    usuario     @relation(fields: [usuarioId], references: [id])
+  entrenador Entrenador?
+  rutinasUsuario RutinasUsuario[]
+  alimentacionCliente AlimentacionCliente[]
+}
+
+model Rutina {
+  id           Int       @id @default(autoincrement())
+  nombre       String
+  descripcion  String?
+  creadoEn     DateTime  @default(now())
+
+  ejercicios   Ejercicio[]
+  rutinasUsuario RutinasUsuario[]
+}
+
+model Ejercicio {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  repeticiones  String?
+  instrucciones String?
+  rutinaId      Int
+
+  rutina        Rutina   @relation(fields: [rutinaId], references: [id])
+}
+
+model RutinasUsuario {
+  id        Int     @id @default(autoincrement())
+  clienteId Int
+  rutinaId  Int
+
+  cliente   Cliente @relation(fields: [clienteId], references: [id])
+  rutina    Rutina  @relation(fields: [rutinaId], references: [id])
+}
+
+model Alimentacion {
+  id            Int       @id @default(autoincrement())
+  nombre        String
+  descripcion   String?
+  fechaInicio   DateTime
+  fechaFin      DateTime
+  creadoEn      DateTime  @default(now())
+  actualizadoEn DateTime  @updatedAt
+
+  alimentacionCliente AlimentacionCliente[]
+  comidas             Comida[]
+}
+
+model AlimentacionCliente {
+  id             Int           @id @default(autoincrement())
+  clienteId      Int
+  alimentacionId Int
+
+  cliente        Cliente       @relation(fields: [clienteId], references: [id])
+  alimentacion   Alimentacion @relation(fields: [alimentacionId], references: [id])
+}
+
+model Comida {
+  id             Int       @id @default(autoincrement())
+  tipo           String
+  hora           String?
+  descripcion    String
+  alimentacionId Int
+
+  alimentacion   Alimentacion @relation(fields: [alimentacionId], references: [id])
+}
+
+
+
+enum Categoria {
+  TODAS_LAS_PARTES
+  BACK
+  CARDIO
+  CHEST
+  LOWER_ARMS
+  LOWER_LEGS
+  NECK
+  SHOULDERS
+  UPPER_ARMS
+  UPPER_LEGS
+  WAIST
+}
+
+model Ejerciciobusqueda {
+  id          Int       @id @default(autoincrement())
+  nombre      String
+  descripcion String
+  categoria   Categoria
+  url         String
+}
+

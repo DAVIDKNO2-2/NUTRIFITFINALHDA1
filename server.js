@@ -1,28 +1,59 @@
+// Importamos las dependencias necesarias
 const express = require('express');
-const bodyParser = require('body-parser');
+const session = require('express-session');
 const path = require('path');
+const cors = require('cors');
+
+// Importar rutas
 const apiRoutes = require('./routes/api');
 
+
+// Creamos la aplicación de Express
 const app = express();
-const PORT = process.env.PORT || 3087;
 
-// Middleware
-// Use body-parser to parse JSON bodies
-app.use(bodyParser.json());
+// Puerto donde se ejecutará el servidor
+const PORT = process.env.PORT || 3099;
 
-// Serve static files from the 'public' directory
+// --- MIDDLEWARE ---
+// Habilitar CORS
+app.use(cors());
+
+// Middleware para servir archivos estáticos (HTML, CSS, JS del cliente)
+// app.use(express.static(path.join(__dirname, '..', 'public')));
+
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Use the API routes for all requests to /api
+// Middleware para interpretar datos de formularios y JSON
+app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+
+// Middleware para manejar sesiones (¡Debe ir antes de las rutas que lo usan!)
+app.use(session({
+  secret: 'nutrifit-secret-key', // Clave secreta para firmar la cookie de sesión
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Poner en true si usas HTTPS
+}));
+
+
+// --- RUTAS ---
+// Usamos las rutas de autenticación (login, register, logout, etc.) en la raíz
+// app.use(authRoutes);
+
+// Usamos las rutas de la API bajo el prefijo /api
 app.use('/api', apiRoutes);
 
-// A catch-all route to serve the index.html for any other GET request.
-// This is useful for a single-page application (SPA) architecture.
+// Ruta para obtener los datos de la sesión del usuario logueado
+
+
+// Ruta catch-all para Single Page Applications (SPA)
+// Siempre debe ir al final, después de todas las demás rutas.
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+  res.sendFile(path.join(__dirname, '..', 'public', 'login.html'));
 });
 
-// Start the server
+
+// --- INICIAR SERVIDOR ---
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });

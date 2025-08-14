@@ -1,19 +1,42 @@
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();
 
+
+
+//  TRAER TODAS EJERCICIOS DE BUSQUEDA
+// Esta función obtiene todos los ejercicios de búsqueda desde la base de datos
+const getAllEjerciciosBusqueda = async (req, res) => {
+  try {
+    const ejercicios = await prisma.Ejerciciobusqueda.findMany({
+      orderBy: { id: 'asc' } // Ordenar por id de manera ascendente
+    });
+    res.json(ejercicios);
+  } catch (error) {
+    console.error("Error al obtener todos los ejercicios:", error);
+    res.status(500).json({ error: "Error al obtener todos los ejercicios" });
+  }
+};
+
+
+
+
+
+
+
+//..........................................................................................
 // --- Routine Controllers ---
 
 const getAllRoutines = async (req, res) => {
   try {
-    const routines = await prisma.routine.findMany({
+    const rutinas = await prisma.rutina.findMany({
       include: {
-        exercises: true, // Include the related exercises for each routine
+        ejercicios: true, // Include the related exercises for each routine
       },
       orderBy: {
-        createdAt: 'desc',
+        creadoEn: 'desc',
       }
     });
-    res.json(routines);
+    res.json(rutinas);
   } catch (error) {
     console.error("Failed to get routines:", error);
     res.status(500).json({ error: "Failed to retrieve routines" });
@@ -21,30 +44,30 @@ const getAllRoutines = async (req, res) => {
 };
 
 const createRoutine = async (req, res) => {
-  const { name, description, exercises } = req.body;
+  const { nombre, descripcion, ejercicios } = req.body;
 
-  if (!name) {
+  if (!nombre) {
     return res.status(400).json({ message: 'Routine name is required' });
   }
 
   try {
-    const newRoutine = await prisma.routine.create({
+    const newRutina = await prisma.rutina.create({
       data: {
-        name,
-        description,
-        exercises: {
-          create: exercises.map(ex => ({
-            name: ex.name,
-            repetitions: ex.repetitions,
-            instructions: ex.instructions,
+        nombre,
+        descripcion,
+        ejercicios: {
+          create: ejercicios.map(ex => ({
+            nombre: ex.nombre,
+            repeticiones: ex.repeticiones,
+            instrucciones: ex.instrucciones,
           })),
         },
       },
       include: {
-        exercises: true,
+        ejercicios: true,
       },
     });
-    res.status(201).json(newRoutine);
+    res.status(201).json(newRutina);
   } catch (error) {
     console.error("Failed to create routine:", error);
     res.status(500).json({ error: "Failed to create routine" });
@@ -53,9 +76,9 @@ const createRoutine = async (req, res) => {
 
 const updateRoutine = async (req, res) => {
   const { id } = req.params;
-  const { name, description, exercises } = req.body;
+  const { nombre, descripcion, ejercicios } = req.body;
 
-  if (!name) {
+  if (!nombre) {
     return res.status(400).json({ message: 'Routine name is required' });
   }
 
@@ -63,32 +86,32 @@ const updateRoutine = async (req, res) => {
     // Prisma requires a transaction to update a routine and its exercises safely.
     // 1. Delete old exercises.
     // 2. Update the routine and create the new exercises.
-    const updatedRoutine = await prisma.$transaction(async (tx) => {
-      await tx.exercise.deleteMany({
-        where: { routineId: parseInt(id) },
+    const updatedRutina = await prisma.$transaction(async (tx) => {
+      await tx.ejercicio.deleteMany({
+        where: { rutinaId: parseInt(id) },
       });
 
-      const routine = await tx.routine.update({
+      const rutina = await tx.rutina.update({
         where: { id: parseInt(id) },
         data: {
-          name,
-          description,
-          exercises: {
-            create: exercises.map(ex => ({
-              name: ex.name,
-              repetitions: ex.repetitions,
-              instructions: ex.instructions,
+          nombre,
+          descripcion,
+          ejercicios: {
+            create: ejercicios.map(ex => ({
+              nombre: ex.nombre,
+              repeticiones: ex.repeticiones,
+              instrucciones: ex.instrucciones,
             })),
           },
         },
         include: {
-          exercises: true,
+          ejercicios: true,
         },
       });
-      return routine;
+      return rutina;
     });
 
-    res.json(updatedRoutine);
+    res.json(updatedRutina);
   } catch (error) {
     console.error(`Failed to update routine ${id}:`, error);
     if (error.code === 'P2025') { // Prisma code for record not found
@@ -104,10 +127,10 @@ const deleteRoutine = async (req, res) => {
     // Because of the foreign key relationship, we must delete the exercises first,
     // then the routine. A transaction ensures this happens atomically.
     await prisma.$transaction(async (tx) => {
-      await tx.exercise.deleteMany({
-        where: { routineId: parseInt(id) },
+      await tx.ejercicio.deleteMany({
+        where: { rutinaId: parseInt(id) },
       });
-      await tx.routine.delete({
+      await tx.rutina.delete({
         where: { id: parseInt(id) },
       });
     });
@@ -144,4 +167,5 @@ module.exports = {
   getAllAssignments,
   createAssignment,
   deleteAssignment,
+  getAllEjerciciosBusqueda
 };
