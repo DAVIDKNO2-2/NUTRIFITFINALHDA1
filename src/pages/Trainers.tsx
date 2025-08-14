@@ -1,73 +1,56 @@
-import { Star, MapPin, Calendar, Users, Award, MessageCircle } from "lucide-react";
+import { useState, useEffect } from 'react';
+import { Star, MapPin, Calendar, Users, Award, MessageCircle, GraduationCap } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-const trainers = [
-  {
-    id: 1,
-    name: "Carlos Ruiz",
-    specialty: "Entrenamiento de Fuerza",
-    experience: "8 años",
-    rating: 4.9,
-    reviews: 156,
-    clients: 45,
-    location: "Sala Principal",
-    image: "/placeholder-trainer-1.jpg",
-    certifications: ["NASM-CPT", "Crossfit Level 2", "Nutrición Deportiva"],
-    bio: "Especialista en desarrollo de fuerza y masa muscular con más de 8 años de experiencia.",
-    specialties: ["Powerlifting", "Hipertrofia", "Rehabilitación"],
-    availability: ["Lunes-Viernes 6:00-14:00", "Sábados 8:00-12:00"]
-  },
-  {
-    id: 2,
-    name: "Ana García",
-    specialty: "Cardio y HIIT",
-    experience: "6 años",
-    rating: 4.8,
-    reviews: 203,
-    clients: 62,
-    location: "Zona Cardio",
-    image: "/placeholder-trainer-2.jpg",
-    certifications: ["ACE-CPT", "HIIT Specialist", "Yoga Instructor"],
-    bio: "Experta en entrenamiento cardiovascular y programas de pérdida de peso.",
-    specialties: ["HIIT", "Cardio", "Pérdida de peso"],
-    availability: ["Lunes-Viernes 14:00-22:00", "Domingos 9:00-13:00"]
-  },
-  {
-    id: 3,
-    name: "María López",
-    specialty: "Yoga y Flexibilidad",
-    experience: "10 años",
-    rating: 4.9,
-    reviews: 189,
-    clients: 38,
-    location: "Sala de Yoga",
-    image: "/placeholder-trainer-3.jpg",
-    certifications: ["RYT-500", "Yin Yoga", "Meditación Mindfulness"],
-    bio: "Instructora certificada de yoga con enfoque en bienestar integral y mindfulness.",
-    specialties: ["Hatha Yoga", "Vinyasa", "Meditación"],
-    availability: ["Martes-Sábado 7:00-15:00"]
-  },
-  {
-    id: 4,
-    name: "Roberto Silva",
-    specialty: "Entrenamiento Funcional",
-    experience: "7 años",
-    rating: 4.7,
-    reviews: 134,
-    clients: 41,
-    location: "Área Funcional",
-    image: "/placeholder-trainer-4.jpg",
-    certifications: ["FMS", "TRX Instructor", "Kettlebell Specialist"],
-    bio: "Entrenador funcional especializado en movimientos naturales y prevención de lesiones.",
-    specialties: ["Entrenamiento Funcional", "Movilidad", "Atletismo"],
-    availability: ["Lunes-Viernes 16:00-21:00"]
-  }
-];
+const Trainers = () => {
+  // Estado para almacenar los datos de los entrenadores
+  const [trainers, setTrainers] = useState([]);
+  // Estado para manejar el estado de carga
+  const [loading, setLoading] = useState(true);
+  // Estado para manejar los errores de la API
+  const [error, setError] = useState(null);
 
-export default function Trainers() {
+  useEffect(() => {
+    // Función asincrónica para obtener los datos de la API
+    const fetchTrainers = async () => {
+      try {
+        const response = await fetch('http://localhost:3010/api/entrenadortodos');
+        if (!response.ok) {
+          throw new Error('Network response was not ok');
+        }
+        const data = await response.json();
+        setTrainers(data);
+      } catch (err) {
+        console.error("Failed to fetch trainers:", err);
+        setError("Error al cargar los datos de los entrenadores. Inténtalo de nuevo más tarde.");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchTrainers();
+  }, []);
+
+  // Renderizado condicional
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl text-muted-foreground">Cargando entrenadores...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-xl text-red-500">{error}</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background pt-20">
       <div className="container mx-auto px-4 py-8">
@@ -100,20 +83,23 @@ export default function Trainers() {
                   {/* Trainer Image & Basic Info */}
                   <div className="flex-shrink-0">
                     <Avatar className="w-24 h-24 mx-auto md:mx-0">
-                      <AvatarImage src={trainer.image} alt={trainer.name} />
+                      {/* Usamos el campo 'fotoPerfil' de la API. Si no existe, usamos un placeholder */}
+                      <AvatarImage src={trainer.fotoPerfil || `https://placehold.co/96x96/E5E7EB/4B5563?text=${trainer.nombreCompleto.split(' ').map(n => n[0]).join('')}`} alt={trainer.nombreCompleto} />
                       <AvatarFallback className="bg-gradient-orange text-white text-xl font-bold">
-                        {trainer.name.split(' ').map(n => n[0]).join('')}
+                        {trainer.nombreCompleto.split(' ').map(n => n[0]).join('')}
                       </AvatarFallback>
                     </Avatar>
                     <div className="text-center md:text-left mt-3">
+                      {/* Rating y Reseñas no están en la API, se usan valores estáticos */}
                       <div className="flex items-center justify-center md:justify-start gap-1 mb-1">
                         <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="font-medium text-foreground">{trainer.rating}</span>
-                        <span className="text-sm text-muted-foreground">({trainer.reviews})</span>
+                        <span className="font-medium text-foreground">4.8</span>
+                        <span className="text-sm text-muted-foreground">(203)</span>
                       </div>
+                      {/* Usamos el campo 'ciudad' y 'pais' de la API */}
                       <div className="flex items-center justify-center md:justify-start gap-1 text-sm text-muted-foreground">
                         <MapPin className="h-3 w-3" />
-                        {trainer.location}
+                        {trainer.ciudad && trainer.pais ? `${trainer.ciudad}, ${trainer.pais}` : trainer.ciudad || trainer.pais || "No especificado"}
                       </div>
                     </div>
                   </div>
@@ -121,62 +107,61 @@ export default function Trainers() {
                   {/* Trainer Details */}
                   <div className="flex-1 space-y-4">
                     <div>
-                      <h3 className="text-xl font-bold text-foreground mb-1">{trainer.name}</h3>
-                      <p className="text-primary font-medium mb-2">{trainer.specialty}</p>
-                      <p className="text-sm text-muted-foreground leading-relaxed">{trainer.bio}</p>
+                      {/* Usamos el campo 'nombreCompleto' de la API */}
+                      <h3 className="text-xl font-bold text-foreground mb-1">{trainer.nombreCompleto}</h3>
+                      {/* Usamos el primer valor de 'especialidades' para la especialidad principal */}
+                      <p className="text-primary font-medium mb-2">{trainer.especialidades?.split(',')[0] || "Entrenador Personal"}</p>
+                      {/* Usamos el campo 'biografia' de la API */}
+                      <p className="text-sm text-muted-foreground leading-relaxed">{trainer.biografia || "Sin biografía disponible."}</p>
                     </div>
 
-                    {/* Stats */}
-                    <div className="grid grid-cols-3 gap-4">
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="font-bold text-foreground">{trainer.experience}</div>
-                        <div className="text-xs text-muted-foreground">Experiencia</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="font-bold text-foreground">{trainer.clients}</div>
-                        <div className="text-xs text-muted-foreground">Clientes</div>
-                      </div>
-                      <div className="text-center p-3 bg-muted rounded-lg">
-                        <div className="font-bold text-foreground">{trainer.reviews}</div>
-                        <div className="text-xs text-muted-foreground">Reseñas</div>
-                      </div>
-                    </div>
+                    {/* Estadísticas - Adaptadas a los datos disponibles */}
+               
 
-                    {/* Specialties */}
+                    {/* Especialidades */}
                     <div>
                       <h4 className="font-medium text-foreground mb-2">Especialidades:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {trainer.specialties.map((specialty, index) => (
+                        {/* Usamos el campo 'especialidades' de la API, separando por comas */}
+                        {trainer.especialidades && trainer.especialidades.split(',').map((specialty, index) => (
                           <Badge key={index} variant="secondary" className="text-xs">
-                            {specialty}
+                            {specialty.trim()}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
-                    {/* Certifications */}
+                    {/* Certificaciones */}
                     <div>
                       <h4 className="font-medium text-foreground mb-2">Certificaciones:</h4>
                       <div className="flex flex-wrap gap-1">
-                        {trainer.certifications.map((cert, index) => (
+                        {/* Usamos el campo 'certificaciones' de la API, separando por comas */}
+                        {trainer.certificaciones && trainer.certificaciones.split(',').map((cert, index) => (
                           <Badge key={index} className="text-xs bg-primary/10 text-primary border-primary/20">
                             <Award className="h-3 w-3 mr-1" />
-                            {cert}
+                            {cert.trim()}
                           </Badge>
                         ))}
                       </div>
                     </div>
 
-                    {/* Availability */}
+                    {/* Nivel Académico */}
+                    <div>
+                        <h4 className="font-medium text-foreground mb-2">Nivel Académico:</h4>
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <GraduationCap className="h-4 w-4" />
+                            {trainer.nivelAcademico || "No especificado"}
+                        </div>
+                    </div>
+
+                    {/* Disponibilidad - No en la API, se usa un valor estático */}
                     <div>
                       <h4 className="font-medium text-foreground mb-2">Disponibilidad:</h4>
                       <div className="space-y-1">
-                        {trainer.availability.map((time, index) => (
-                          <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Calendar className="h-3 w-3" />
-                            {time}
+                            Lunes-Viernes 6:00-22:00
                           </div>
-                        ))}
                       </div>
                     </div>
 
@@ -215,4 +200,6 @@ export default function Trainers() {
       </div>
     </div>
   );
-}
+};
+
+export default Trainers;

@@ -113,7 +113,7 @@ export default function Routines() {
     const handleDeleteConfirm = async () => {
         if (!selectedRoutine) return;
         // Llama a la API para eliminar la rutina
-        const res = await fetch(`http://localhost:3097/api/routines/${selectedRoutine.id}`, {
+        const res = await fetch(`http://localhost:3010/api/rutinas/${selectedRoutine.id}`, {
             method: "DELETE",
         });
         if (res.ok) {
@@ -176,7 +176,7 @@ export default function Routines() {
 
         if (dialogMode === 'add') {
             // POST a la API
-            const res = await fetch("http://localhost:3097/api/routines", {
+            const res = await fetch("http://localhost:3010/api/rutinas", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(newRoutine),
@@ -207,7 +207,7 @@ export default function Routines() {
                 id: selectedRoutine.id,
                 ...newRoutine,
             };
-            const res = await fetch(`http://localhost:3097/api/routines/${selectedRoutine.id}`, {
+            const res = await fetch(`http://localhost:3010/api/rutinas/${selectedRoutine.id}`, {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(routineToUpdate),
@@ -242,7 +242,7 @@ export default function Routines() {
     };
 
     useEffect(() => {
-        fetch("http://localhost:3097/api/routines")
+        fetch("http://localhost:3010/api/rutinas")
             .then(res => res.json())
             .then(data => {
                 // Adaptar la estructura de la API a la que espera la UI
