@@ -5,6 +5,8 @@ const router = express.Router();
 const authController = require('../controllers/authController');
 const controller = require('../controllers/routineController');
 const alimentacionController = require('../controllers/alimentacionController');
+const cliente = require('../controllers/clienteController');
+
 
 
 // --- Auth Routes (Login, Registro, etc.) ---
@@ -46,6 +48,7 @@ router.delete('/rutinas/:id', controller.deleteRoutine);
 //ruta busqueda de ejercicios 
 // --- EjerciciosBusqueda Routes ---
 router.get('/ejerciciosbusqueda', controller.getAllEjerciciosBusqueda);
+router.get('/ejerciciosbusqueda/:categoria', controller.getEjerciciosByCategoria);
 
 
 
@@ -75,7 +78,10 @@ router.put('/alimentacion/:id', alimentacionController.updateAlimentacion);
 
 // DELETE an alimentacion
 router.delete('/alimentacion/:id', alimentacionController.deleteAlimentacion);
+//clientes y entrenadores 
 
+router.post('/clientes', cliente.createCliente);
+router.post('/entrenador', entrenador.createEntrenador);
 
 module.exports = router;
 

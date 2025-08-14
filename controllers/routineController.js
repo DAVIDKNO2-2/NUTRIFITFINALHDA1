@@ -17,6 +17,39 @@ const getAllEjerciciosBusqueda = async (req, res) => {
   }
 };
 
+const getEjerciciosByCategoria = async (req, res) => {
+  const { categoria } = req.params;
+
+  try {
+    let ejercicios;
+    if (categoria.toUpperCase() === 'TODAS_LAS_PARTES') {
+      ejercicios = await prisma.Ejerciciobusqueda.findMany({
+        orderBy: { id: 'asc' }
+      });
+    } else {
+      ejercicios = await prisma.Ejerciciobusqueda.findMany({
+        where: {
+          categoria: categoria.toUpperCase()
+        },
+        orderBy: { id: 'asc' }
+      });
+    }
+
+    if (ejercicios.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron ejercicios para esta categoría.' });
+    }
+
+    res.json(ejercicios);
+  } catch (error) {
+    console.error(`Error al obtener ejercicios por categoría ${categoria}:`, error);
+    // Revisar si el error es por un valor de enum inválido
+    if (error.code === 'P2022' || error.message.includes('Invalid enum value')) {
+        return res.status(400).json({ error: `La categoría '${categoria}' no es válida.` });
+    }
+    res.status(500).json({ error: 'Error al obtener los ejercicios.' });
+  }
+};
+
 
 
 
@@ -167,5 +200,6 @@ module.exports = {
   getAllAssignments,
   createAssignment,
   deleteAssignment,
-  getAllEjerciciosBusqueda
+  getAllEjerciciosBusqueda,
+  getEjerciciosByCategoria
 };

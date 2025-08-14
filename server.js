@@ -12,7 +12,7 @@ const apiRoutes = require('./routes/api');
 const app = express();
 
 // Puerto donde se ejecutará el servidor
-const PORT = process.env.PORT || 3099;
+const PORT = process.env.PORT || 3010;
 
 // --- MIDDLEWARE ---
 // Habilitar CORS
